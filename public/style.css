@@ -1,0 +1,47 @@
+p {
+	font-size: larger;
+}
+
+#boardContainer {
+	width: 210px;
+	height: 270px;
+}
+
+.cell {
+	width: 28px;
+	height: 28px;
+	aspect-ratio: 1 / 1;
+	border: 1px black solid;
+	background-color: gray;
+}
+
+.cell>div {
+	border-radius: 50%;
+	width: 80%;
+	height: 80%;
+	margin: 10%;
+}
+
+.cell>div:not(.red):not(.yellow) {
+	background-color: black;
+}
+
+.column {
+	display: inline-block;
+}
+
+.column:hover>div.cell {
+	background-color: #ccc;
+}
+
+.red {
+	background-color: red;
+}
+
+.yellow {
+	background-color: yellow;
+}
+
+#yourColor+div {
+	display: inline-block;
+}
