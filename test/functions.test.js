@@ -1,4 +1,4 @@
-const { isGameOver, EMPTY, RED, YELLOW } = require('./utils');
+const { isGameOver, EMPTY, RED, YELLOW } = require('../src/utils');
 
 test('should find a sequence of 4 in a column', () => {
 	for (let r = 0; r < 6; r++)

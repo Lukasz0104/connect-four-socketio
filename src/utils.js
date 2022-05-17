@@ -2,6 +2,11 @@ const EMPTY = 0;
 const RED = 1;
 const YELLOW = 2;
 
+function clone2DArray(arr)
+{
+	return arr.map(a => a.slice());
+}
+
 function isGameOver(board)
 {
 	// check rows
@@ -79,6 +84,19 @@ function isGameOver(board)
 	return false;
 }
 
+function clearBoard(board)
+{
+	for (let col in board)
+	{
+		for (let i = 0; i < col.length; i++)
+		{
+			col[i] = EMPTY;
+		}
+	}
+}
+
+module.exports.clearBoard = clearBoard;
+module.exports.clone2DArray = clone2DArray;
 module.exports.EMPTY = EMPTY;
 module.exports.RED = RED;
 module.exports.YELLOW = YELLOW;

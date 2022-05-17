@@ -45,3 +45,11 @@ p {
 #yourColor+div {
 	display: inline-block;
 }
+
+.hidden {
+	display: none;
+}
+
+div#controls > div {
+	display: inline-block;
+}

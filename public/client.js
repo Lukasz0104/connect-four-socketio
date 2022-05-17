@@ -3,6 +3,7 @@ const RED = 1;
 const YELLOW = 2;
 const container = document.querySelector('#boardContainer');
 const message = document.querySelector('p#message');
+const availableRooms = document.querySelector('ul#rooms');
 const columns = [];
 
 window.onload = () =>
@@ -10,6 +11,17 @@ window.onload = () =>
 	let socket = io();
 	let canMove = false;
 	document.querySelector('button#new-game').addEventListener('click', newGame);
+	document.querySelector('div#controls > div > button').addEventListener('click', joinRoom);
+	document.querySelector('#disconnect').addEventListener('click', leaveRoom);
+
+	function joinRoom()
+	{
+		let roomID = document.querySelector('div#controls > div > input').value;
+		if (roomID)
+		{
+			socket.emit('join-room', roomID);
+		}
+	}
 
 	const initBoard = () =>
 	{
@@ -36,8 +48,10 @@ window.onload = () =>
 
 	function clickHandler()
 	{
-		// console.log("emitting 'move' event...");
-		socket.emit('move', this.firstChild.getAttribute('data-column'));
+		if (canMove)
+		{
+			socket.emit('move', this.firstChild.getAttribute('data-column'));
+		}
 	}
 
 	function newGame()
@@ -84,9 +98,20 @@ window.onload = () =>
 		}
 	}
 
-	socket.on('init', (flag) =>
+	function switchView()
 	{
-		// console.log(`received 'init' event: ${flag}`);
+		document.querySelector('div#controls').classList.toggle('hidden');
+		document.querySelector('div#game').classList.toggle('hidden');
+	}
+
+	function leaveRoom()
+	{
+		socket.emit('leave-room');
+		switchView();
+	}
+
+	socket.on('start-game', (flag) =>
+	{
 		canMove = flag;
 		initBoard();
 		managageEventListeners();
@@ -105,7 +130,6 @@ window.onload = () =>
 
 	socket.on('update', (board) =>
 	{
-		// console.log('received `update` event');
 		updateBoard(board);
 		message.innerText = canMove ? "Your turn" : "Waiting for opponent's move...";
 	});
@@ -120,5 +144,28 @@ window.onload = () =>
 		alert('you lost! better luck next time!');
 	});
 
-	initBoard();
+	socket.on('room-full', () => {
+		alert("room was full");
+	});
+
+	socket.on('available-rooms', (rooms) => {
+		availableRooms.replaceChildren();
+		for (let room of rooms)
+		{
+			let listItem = document.createElement('li');
+			listItem.innerText = room;
+			availableRooms.appendChild(listItem);
+		}
+	});
+
+	socket.on('room-joined', () => {
+		console.log('joined room');
+		switchView();
+	});
+	
+	socket.on('opponent-left', () =>
+	{
+		message.innerText = "User left, waiting for new opponent...";
+		canMove = false;
+	});
 }

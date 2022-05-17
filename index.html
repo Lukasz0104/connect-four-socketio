@@ -10,15 +10,27 @@
 	</head>
 
 	<body>
-		<div id="boardContainer">
-
+		<div id="controls">
+			<div>	
+				<input placeholder="type room id" />
+				<button>join room</button>
+			</div>
+			<div>
+				<p>Available rooms:</p>
+				<ul id="rooms"></ul>
+			</div>
+			
 		</div>
-		<div>
-			<span id="yourColor">Your color: </span>
-			<div class="cell"></div>
+		<div id="game" class="hidden">
+			<div id="boardContainer"></div>
+			<div>
+				<span id="yourColor">Your color: </span>
+				<div class="cell"></div>
+			</div>
+			<p id="message"></p>
+			<button id="new-game">new game</button>
+			<button id="disconnect">disconnect from room</button>
 		</div>
-		<p id="message"></p>
-		<button id="new-game">new game</button>
 		<script src="/socket.io/socket.io.js"></script>
 		<script src='/client.js'></script>
 	</body>

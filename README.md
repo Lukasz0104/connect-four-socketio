@@ -10,8 +10,7 @@ Simple Connect Four game implemented in JavaScript with use of Socket.IO.
 4. open 2 instances of `localhost:3000` in a browser (e.g. in separate tabs)
 
 ### todos:
-- [ ] create rooms on the server
-- [ ] enable players to select room they want to join
+- [x] create rooms on the server
+- [ ] enable players to join room by clicking on room's id
 - [ ] improve styling
 - [ ] rewrite frontend with angular
-- [ ] docker maybe?
