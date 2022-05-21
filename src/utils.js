@@ -15,11 +15,11 @@ function isGameOver(board)
 		for (let c = 0; c < 4; c++)
 		{
 			let prev = board[c][r];
-			let flag = prev != EMPTY;
+			let flag = prev !== EMPTY;
 
 			for (let i = 1; i < 4; i++)
 			{
-				flag &&= (board[c + i][r] == prev);
+				flag &&= (board[c + i][r] === prev);
 			}
 			if (flag)
 			{
@@ -33,10 +33,10 @@ function isGameOver(board)
 		for (let r = 0; r < 3; r++)
 		{
 			let prev = board[c][r];
-			let flag = prev != EMPTY;
+			let flag = prev !== EMPTY;
 			for (let i = 1; i < 4; i++)
 			{
-				flag &&= (prev == board[c][r + i]);
+				flag &&= (prev === board[c][r + i]);
 			}
 			if (flag)
 			{
@@ -51,10 +51,10 @@ function isGameOver(board)
 		for (let r = 0; r < 3; r++)
 		{
 			let prev = board[c][r];
-			let flag = prev != EMPTY;
+			let flag = prev !== EMPTY;
 			for (let i = 1; i < 4; i++)
 			{
-				flag &&= (prev == board[c + i][r + i]);
+				flag &&= (prev === board[c + i][r + i]);
 			}
 			if (flag) 
 			{
@@ -69,10 +69,10 @@ function isGameOver(board)
 		for (let r = 0; r < 3; r++)
 		{
 			let prev = board[c][r];
-			let flag = prev != EMPTY;
+			let flag = prev !== EMPTY;
 			for (let i = 1; i < 4; i++)
 			{
-				flag &&= (prev == board[c - i][r + i]);
+				flag &&= (prev === board[c - i][r + i]);
 			}
 			if (flag) 
 			{

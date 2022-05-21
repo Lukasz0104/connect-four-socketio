@@ -53,3 +53,11 @@ p {
 div#controls > div {
 	display: inline-block;
 }
+
+li:hover {
+	color: lightskyblue;
+}
+
+li:hover::marker {
+	color: black;
+}

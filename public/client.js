@@ -11,15 +11,25 @@ window.onload = () =>
 	let socket = io();
 	let canMove = false;
 	document.querySelector('button#new-game').addEventListener('click', newGame);
-	document.querySelector('div#controls > div > button').addEventListener('click', joinRoom);
+	document.querySelector('div#controls > div > button')
+		.addEventListener('click', joinRoomViaInput);
 	document.querySelector('#disconnect').addEventListener('click', leaveRoom);
 
-	function joinRoom()
+	function joinRoomViaInput()
 	{
 		let roomID = document.querySelector('div#controls > div > input').value;
 		if (roomID)
 		{
 			socket.emit('join-room', roomID);
+		}
+	}
+
+	function joinRoomViaClick()
+	{
+		let room = this.innerText;
+		if (room)
+		{
+			socket.emit('join-room', room);
 		}
 	}
 
@@ -80,10 +90,10 @@ window.onload = () =>
 				}
 			}
 		}
-		managageEventListeners();
+		manageEventListeners();
 	}
 
-	function managageEventListeners()
+	function manageEventListeners()
 	{
 		for (let column of columns)
 		{
@@ -106,7 +116,7 @@ window.onload = () =>
 
 	function leaveRoom()
 	{
-		socket.emit('leave-room');
+		socket.emit('leave');
 		switchView();
 	}
 
@@ -114,7 +124,7 @@ window.onload = () =>
 	{
 		canMove = flag;
 		initBoard();
-		managageEventListeners();
+		manageEventListeners();
 
 		if (canMove)
 		{
@@ -144,25 +154,29 @@ window.onload = () =>
 		alert('you lost! better luck next time!');
 	});
 
-	socket.on('room-full', () => {
+	socket.on('room-full', () =>
+	{
 		alert("room was full");
 	});
 
-	socket.on('available-rooms', (rooms) => {
+	socket.on('available-rooms', (rooms) =>
+	{
 		availableRooms.replaceChildren();
 		for (let room of rooms)
 		{
 			let listItem = document.createElement('li');
 			listItem.innerText = room;
+			listItem.addEventListener('click', joinRoomViaClick);
 			availableRooms.appendChild(listItem);
 		}
 	});
 
-	socket.on('room-joined', () => {
+	socket.on('room-joined', () =>
+	{
 		console.log('joined room');
 		switchView();
 	});
-	
+
 	socket.on('opponent-left', () =>
 	{
 		message.innerText = "User left, waiting for new opponent...";
