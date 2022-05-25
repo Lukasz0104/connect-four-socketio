@@ -5,7 +5,7 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
-const { isGameOver, EMPTY, RED, YELLOW, clone2DArray } = require('./utils');
+const { isGameOver, EMPTY, RED, YELLOW, clone2DArray, isBoardFull, debug, info } = require('./utils');
 const { RoomVariables } = require('./RoomVariables');
 
 /**
@@ -51,7 +51,8 @@ const getRooms = async () => io.fetchSockets()
 			}
 		}
 		return roomIDs;
-	}).catch(console.log);
+	})
+	.catch(console.log);
 
 /**
  *
@@ -63,26 +64,33 @@ const leaveRoom = async (socket) =>
 	let roomId = socketRooms.filter(r => r !== socket.id).shift();
 	socket.leave(roomId);
 
-	// check if room still exists
-	if (io.of('/').adapter.rooms.get(roomId))
+	if (roomId)
 	{
-		// room still exists, so notify other player that opponent has left
-		socket.to(roomId).emit('opponent-left');
+		info(`User '${socket.id}' left room '${roomId}'`);
 
-		let rV = roomVariables.get(roomId);
-
-		// check which player left
-		if (rV.firstPlayerID === socket.id)
+		// check if room still exists
+		if (io.of('/').adapter.rooms.get(roomId))
 		{
-			// first player left, hence change color for the second player
-			rV.firstPlayerID = rV.secondPlayerID;
-			rV.secondPlayerID = undefined;
+			// room still exists, so notify other player that opponent has left
+			socket.to(roomId).emit('opponent-left');
+
+			let rV = roomVariables.get(roomId);
+
+			// check which player left
+			if (rV.firstPlayerID === socket.id)
+			{
+				// first player left, hence change color for the second player
+				rV.firstPlayerID = rV.secondPlayerID;
+				rV.secondPlayerID = undefined;
+				debug(`Assigning RED color to player '${rV.firstPlayerID}'`);
+			}
 		}
-	}
-	else
-	{
-		// room was deleted, so remove entry from roomVariables
-		roomVariables.delete(roomId);
+		else
+		{
+			// room was deleted, so remove entry from roomVariables
+			roomVariables.delete(roomId);
+			info(`Deleting room '${roomId}'`);
+		}
 	}
 
 	// notify other sockets that room size has changed or was removed
@@ -91,16 +99,20 @@ const leaveRoom = async (socket) =>
 
 io.on('connection', async (socket) =>
 {
+	info(`User '${socket.id}' connected`);
+
 	// notify newly connected user about available rooms
 	socket.emit('available-rooms', (await getRooms()));
 
 	socket.on('join-room', async (roomId) =>
 	{
+		debug(`User '${socket.id}' attempts to join room '${roomId}'`);
 		let room = io.of('/').adapter.rooms.get(roomId);
 		if (!room || room.size < 2)
 		{
 			socket.join(roomId);
 			socket.emit('room-joined');
+			debug(`User '${socket.id}' joined room '${roomId}'`);
 
 			let notFullRooms = await getRooms();
 			io.except(roomId).emit('available-rooms', notFullRooms);
@@ -123,11 +135,13 @@ io.on('connection', async (socket) =>
 				// emit to all clients in this room
 				socket.to(roomId).emit('start-game', true);
 				socket.emit('start-game', false);
+				info(`Starting new game in room '${roomId}'`);
 			}
 		}
 		else
 		{
 			socket.emit('room-full');
+			debug(`User '${socket.id}' was unable to join room '${roomId}', because room was full`);
 		}
 	});
 
@@ -165,23 +179,81 @@ io.on('connection', async (socket) =>
 			// check if anyone did the winning move
 			if (isGameOver(rV.board))
 			{
+				debug(`User '${socket.id}' won the game in room '${roomId}'`);
 				socket.emit('won');
 				socket.to(roomId).emit('lost');
 			}
-			// TODO check draws
+			else if (isBoardFull(rV.board))
+			{
+				debug(`The game in room '${roomId}' is a draw`)
+				io.to(roomId).emit('draw');
+			}
 		}
 	});
 
 	socket.on('disconnecting', async () =>
 	{
 		await leaveRoom(socket);
+		info(`User '${socket.id}' disconnected`);
 	});
 
 	socket.on('leave', async () =>
 	{
 		await leaveRoom(socket);
 	});
+
+	socket.on('restart', (callback) =>
+	{
+		const roomId = Array.from(socket.rooms.values())
+			.filter(r => r !== socket.id)
+			.shift();
+
+		info(`Player ${socket.id} wants to restart the game in room ${roomId}`);
+
+		let rV = roomVariables.get(roomId);
+
+		// determine id of the other player in the room
+		let otherSocketID = rV.firstPlayerID == socket.id ? rV.secondPlayerID : rV.firstPlayerID;
+
+		// ask the other player, whether they want to restart the game
+		io.timeout(3000).to(otherSocketID).emit('prompt-new-game', (err, response) =>
+		{
+			if (err) // opponent didn't answer in time
+			{
+				callback({ response: false });
+				info(`Player ${otherSocketID} did not respond in time`);
+			}
+			else
+			{
+				if (response[0].answer)
+				{
+					callback({ response: true });
+					if (response[0].answer)
+					{
+						info(`Player ${otherSocketID} agreed to restart the game in room ${roomId}`);
+
+						// clear the board
+						rV.board = clone2DArray(board);
+
+						// swap players
+						[rV.firstPlayerID, rV.secondPlayerID] = [rV.secondPlayerID, rV.firstPlayerID];
+
+						info(`Restarting game in room ${roomId}`);
+						io.to(rV.firstPlayerID).emit('start-game', true);
+						io.to(rV.secondPlayerID).emit('start-game', false);
+					}
+				}
+				else 
+				{
+					callback({ response: false });
+					info(`Player ${socket.id} did not want to restart the game in room ${roomId}`);
+				}
+			}
+		});
+	});
 });
 
-module.exports.app = app;
-module.exports.server = server;
+module.exports = {
+	app: app,
+	server: server
+}

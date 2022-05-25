@@ -2,6 +2,7 @@ const path = require('path');
 const express = require('express');
 
 const { app, server } = require('./src/sockets');
+const { info } = require('./src/utils');
 
 const PORT = 3000;
 
@@ -15,5 +16,5 @@ app.get('/', (_req, res) =>
 
 server.listen(PORT, () =>
 {
-	console.log(`listening on localhost:${PORT}`);
+	info(`listening on port ${PORT}`);
 });

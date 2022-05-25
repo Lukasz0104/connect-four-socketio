@@ -66,7 +66,13 @@ window.onload = () =>
 
 	function newGame()
 	{
-		socket.emit('start-new-game');
+		socket.timeout(10000).emit('restart', (err, resp) =>
+		{
+			if (err || !resp.response)
+			{
+				alert('Opponent did not want to restart the game');
+			}
+		});
 	}
 
 	function updateBoard(board)
@@ -173,7 +179,6 @@ window.onload = () =>
 
 	socket.on('room-joined', () =>
 	{
-		console.log('joined room');
 		switchView();
 	});
 
@@ -182,4 +187,17 @@ window.onload = () =>
 		message.innerText = "User left, waiting for new opponent...";
 		canMove = false;
 	});
+
+	socket.on('draw', () => 
+	{
+		alert('The game is a draw!');
+		message.innerText = 'Click `start new game` to play again.';
+	});
+
+	socket.on('prompt-new-game', (callback) =>
+	{
+		callback({
+			answer: confirm('Opponent wants to start a new game. Do you agree?') 
+		});
+	})
 }

@@ -1,6 +1,19 @@
+const { format } = require("fecha");
+
 const EMPTY = 0;
 const RED = 1;
 const YELLOW = 2;
+
+/**
+ * 
+ * @param {String} message 
+ * @returns Message preceded by current timestamp.
+ */
+const formattedMessage = (message, level) => `[${format(new Date(), 'HH:mm:ss:SSS DD-MM-YYYY')}] [${level}] ${message}`;
+
+const info = (message) => console.info(formattedMessage(message, "INFO"));
+
+const debug = (message) => console.debug(formattedMessage(message, "DEBUG"));
 
 function clone2DArray(arr)
 {
@@ -84,6 +97,14 @@ function isGameOver(board)
 	return false;
 }
 
+/**
+ * @param {number[][]} board 
+ */
+function isBoardFull(board)
+{
+	return board.every(col => col.every(i => i != EMPTY));
+}
+
 function clearBoard(board)
 {
 	for (let col in board)
@@ -95,9 +116,14 @@ function clearBoard(board)
 	}
 }
 
-module.exports.clearBoard = clearBoard;
-module.exports.clone2DArray = clone2DArray;
-module.exports.EMPTY = EMPTY;
-module.exports.RED = RED;
-module.exports.YELLOW = YELLOW;
-module.exports.isGameOver = isGameOver;
+module.exports = {
+	EMPTY: EMPTY,
+	RED: RED,
+	YELLOW: YELLOW,
+	info: info,
+	debug: debug,
+	clearBoard: clearBoard,
+	clone2DArray: clone2DArray,
+	isGameOver: isGameOver,
+	isBoardFull: isBoardFull
+}

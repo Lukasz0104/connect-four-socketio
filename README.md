@@ -13,4 +13,4 @@ Simple Connect Four game implemented in JavaScript with use of Socket.IO.
 - [x] create rooms on the server
 - [x] enable players to join room by clicking on room's id
 - [ ] improve styling
-- [ ] rewrite frontend with angular
+- [ ] migrate to TypeScript

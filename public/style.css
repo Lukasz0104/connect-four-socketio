@@ -1,15 +1,22 @@
+:root {
+	--cell-size: 38px;
+	--cell-border: 1px;
+	--square-size: calc(var(--cell-size) + 2 * var(--cell-border));
+}
+
 p {
 	font-size: larger;
 }
 
 #boardContainer {
-	width: 210px;
-	height: 270px;
+	width: calc(7 * var(--square-size));
+	height: calc(6 * var(--square-size));
+	margin-bottom: 50px;
 }
 
 .cell {
-	width: 28px;
-	height: 28px;
+	width: var(--cell-size);
+	height: var(--cell-size);
 	aspect-ratio: 1 / 1;
 	border: 1px black solid;
 	background-color: gray;
