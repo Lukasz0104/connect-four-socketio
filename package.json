@@ -2,20 +2,27 @@
 	"name": "connect-four-socketio",
 	"version": "1.0.0",
 	"description": "",
-	"main": "server.js",
+	"main": "./dist/server.js",
 	"scripts": {
 		"test": "jest",
-		"devServer": "nodemon -V -e js,html,css"
+		"devServer": "concurrently \"npx tsc --watch\" \"nodemon -w dist -w public -w index.html\"",
+		"build": "tsc",
+		"start": "node dist/server.js"
 	},
 	"author": "Łukasz Stępień",
 	"license": "ISC",
 	"dependencies": {
+		"@types/socket.io": "^3.0.2",
 		"express": "^4.18.0",
 		"fecha": "^4.2.3",
-		"socket.io": "^4.5.0"
+		"socket.io": "^4.5.1"
 	},
 	"devDependencies": {
+		"@types/express": "^4.17.13",
+		"@types/node": "^17.0.40",
+		"concurrently": "^7.2.1",
 		"jest": "^28.0.3",
-		"nodemon": "^2.0.15"
+		"nodemon": "^2.0.15",
+		"typescript": "^4.7.3"
 	}
 }

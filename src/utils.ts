@@ -1,26 +1,26 @@
-const { format } = require("fecha");
+import { format } from "fecha";
 
-const EMPTY = 0;
-const RED = 1;
-const YELLOW = 2;
+export const EMPTY: number = 0;
+export const RED: number = 1;
+export const YELLOW: number = 2;
 
 /**
  * 
  * @param {String} message 
  * @returns Message preceded by current timestamp.
  */
-const formattedMessage = (message, level) => `[${format(new Date(), 'HH:mm:ss:SSS DD-MM-YYYY')}] [${level}] ${message}`;
+export const formattedMessage = (message: string, level: string) => `[${format(new Date(), 'HH:mm:ss:SSS DD-MM-YYYY')}] [${level}] ${message}`;
 
-const info = (message) => console.info(formattedMessage(message, "INFO"));
+export const info = (message: string) => console.info(formattedMessage(message, "INFO"));
 
-const debug = (message) => console.debug(formattedMessage(message, "DEBUG"));
+export const debug = (message: string) => console.debug(formattedMessage(message, "DEBUG"));
 
-function clone2DArray(arr)
+export function clone2DArray(arr: number[][]): number[][]
 {
 	return arr.map(a => a.slice());
 }
 
-function isGameOver(board)
+export function isGameOver(board: number[][]): boolean
 {
 	// check rows
 	for (let r = 0; r < 6; r++)
@@ -97,33 +97,18 @@ function isGameOver(board)
 	return false;
 }
 
-/**
- * @param {number[][]} board 
- */
-function isBoardFull(board)
+export function isBoardFull(board: number[][]): boolean
 {
 	return board.every(col => col.every(i => i != EMPTY));
 }
 
-function clearBoard(board)
+export function clearBoard(board: number[][])
 {
-	for (let col in board)
+	for (let col of board)
 	{
 		for (let i = 0; i < col.length; i++)
 		{
 			col[i] = EMPTY;
 		}
 	}
-}
-
-module.exports = {
-	EMPTY: EMPTY,
-	RED: RED,
-	YELLOW: YELLOW,
-	info: info,
-	debug: debug,
-	clearBoard: clearBoard,
-	clone2DArray: clone2DArray,
-	isGameOver: isGameOver,
-	isBoardFull: isBoardFull
 }

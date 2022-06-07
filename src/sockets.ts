@@ -1,20 +1,21 @@
-const express = require('express');
-const app = express();
-const http = require('http');
-const server = http.createServer(app);
-const { Server } = require("socket.io");
+import express from 'express';
+import http from 'http';
+
+export const app = express();
+export const server = http.createServer(app);
+
+import { Server, Socket } from "socket.io";
 const io = new Server(server);
 
-const { isGameOver, EMPTY, RED, YELLOW, clone2DArray, isBoardFull, debug, info } = require('./utils');
-const { RoomVariables } = require('./RoomVariables');
+import { isGameOver, EMPTY, RED, YELLOW, clone2DArray, isBoardFull, debug, info } from './utils';
+import RoomVariables from './RoomVariables';
 
 /**
  * Maps room's ID to object containing room variables, such as connected players and board.
- * @type {Map<string, RoomVariables>}
  */
-let roomVariables = new Map();
+let roomVariables: Map<string, RoomVariables> = new Map();
 
-const board = [
+const board: number[][] = [
 	[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY],
 	[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY],
 	[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY],
@@ -24,44 +25,31 @@ const board = [
 	[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY]
 ];
 
-const getRooms = async () => io.fetchSockets()
-	.then((sockets) =>
+const getRooms = (): string[] =>
+{
+	let roomIDs: string[] = [];
+
+	// list of clients' ids
+	const clients = Array.from(io.of('/').sockets.keys());
+
+	// collection of rooms
+	const rooms = io.of('/').adapter.rooms;
+
+	for (let [id, room] of rooms.entries())
 	{
-		// map room id to its size
-		let roomIDs = [];
-
-		// list of clients' ids
-		const clients = sockets.map(s => s.id);
-
-		// room list
-		const rooms = io.of('/').adapter.rooms;
-
-		// rooms' ids
-		const keys = rooms.keys();
-
-		for (let room of keys)
+		if (!clients.includes(id) && room.size < 2)
 		{
-			// size of current room
-			let s = rooms.get(room).size;
-
-			//  exclude user's private room and full rooms
-			if (!clients.includes(room) && s < 2)
-			{
-				roomIDs.push(room);
-			}
+			roomIDs.push(id);
 		}
-		return roomIDs;
-	})
-	.catch(console.log);
+	}
 
-/**
- *
- * @param socket {Socket} Socket that is disconnecting or emitted 'leave' event.
- */
-const leaveRoom = async (socket) =>
+	return roomIDs;
+}
+
+const leaveRoom = async (socket: Socket) =>
 {
 	let socketRooms = Array.from(socket.rooms.values());
-	let roomId = socketRooms.filter(r => r !== socket.id).shift();
+	let roomId = socketRooms.filter(r => r !== socket.id).shift()!;
 	socket.leave(roomId);
 
 	if (roomId)
@@ -74,13 +62,13 @@ const leaveRoom = async (socket) =>
 			// room still exists, so notify other player that opponent has left
 			socket.to(roomId).emit('opponent-left');
 
-			let rV = roomVariables.get(roomId);
+			let rV = roomVariables.get(roomId)!;
 
 			// check which player left
-			if (rV.firstPlayerID === socket.id)
+			if (rV?.firstPlayerID === socket.id)
 			{
 				// first player left, hence change color for the second player
-				rV.firstPlayerID = rV.secondPlayerID;
+				rV.firstPlayerID = rV.secondPlayerID!;
 				rV.secondPlayerID = undefined;
 				debug(`Assigning RED color to player '${rV.firstPlayerID}'`);
 			}
@@ -94,7 +82,7 @@ const leaveRoom = async (socket) =>
 	}
 
 	// notify other sockets that room size has changed or was removed
-	io.emit('available-rooms', (await getRooms()));
+	io.emit('available-rooms', getRooms());
 }
 
 io.on('connection', async (socket) =>
@@ -102,7 +90,7 @@ io.on('connection', async (socket) =>
 	info(`User '${socket.id}' connected`);
 
 	// notify newly connected user about available rooms
-	socket.emit('available-rooms', (await getRooms()));
+	socket.emit('available-rooms', getRooms());
 
 	socket.on('join-room', async (roomId) =>
 	{
@@ -114,7 +102,7 @@ io.on('connection', async (socket) =>
 			socket.emit('room-joined');
 			debug(`User '${socket.id}' joined room '${roomId}'`);
 
-			let notFullRooms = await getRooms();
+			let notFullRooms = getRooms();
 			io.except(roomId).emit('available-rooms', notFullRooms);
 
 			if (!room) // first player
@@ -124,12 +112,12 @@ io.on('connection', async (socket) =>
 			else if (room.size === 2)
 			{
 				let rV = roomVariables.get(roomId);
-				rV.secondPlayerID = socket.id;
+				rV!.secondPlayerID = socket.id;
 
 				// check if board is even partially filled (meaning that user left mid-game)
-				if (rV.board.some((row) => row.some(e => e !== EMPTY)))
+				if (rV!.board.some((row) => row.some(e => e !== EMPTY)))
 				{
-					rV.board = clone2DArray(board);
+					rV!.board = clone2DArray(board);
 				}
 
 				// emit to all clients in this room
@@ -149,14 +137,11 @@ io.on('connection', async (socket) =>
 	{
 		const roomId = Array.from(socket.rooms.values())
 			.filter(r => r !== socket.id)
-			.shift();
+			.shift()!;
 
 		let column = Number(c);
 
-		/**
-		 * @type {RoomVariables}
-		 */
-		let rV = roomVariables.get(roomId);
+		let rV: RoomVariables = roomVariables.get(roomId)!;
 
 		// find position to insert next piece
 		let index = rV.board[column].lastIndexOf(EMPTY);
@@ -206,17 +191,17 @@ io.on('connection', async (socket) =>
 	{
 		const roomId = Array.from(socket.rooms.values())
 			.filter(r => r !== socket.id)
-			.shift();
+			.shift()!;
 
 		info(`Player ${socket.id} wants to restart the game in room ${roomId}`);
 
-		let rV = roomVariables.get(roomId);
+		let rV = roomVariables.get(roomId)!;
 
 		// determine id of the other player in the room
 		let otherSocketID = rV.firstPlayerID == socket.id ? rV.secondPlayerID : rV.firstPlayerID;
 
 		// ask the other player, whether they want to restart the game
-		io.timeout(3000).to(otherSocketID).emit('prompt-new-game', (err, response) =>
+		io.timeout(3000).to(otherSocketID!).emit('prompt-new-game', (err: any, response: { answer: boolean; }[]) =>
 		{
 			if (err) // opponent didn't answer in time
 			{
@@ -236,7 +221,7 @@ io.on('connection', async (socket) =>
 						rV.board = clone2DArray(board);
 
 						// swap players
-						[rV.firstPlayerID, rV.secondPlayerID] = [rV.secondPlayerID, rV.firstPlayerID];
+						[rV.firstPlayerID, rV.secondPlayerID] = [rV.secondPlayerID!, rV.firstPlayerID];
 
 						info(`Restarting game in room ${roomId}`);
 						io.to(rV.firstPlayerID).emit('start-game', true);
@@ -252,8 +237,3 @@ io.on('connection', async (socket) =>
 		});
 	});
 });
-
-module.exports = {
-	app: app,
-	server: server
-}
