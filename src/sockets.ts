@@ -46,7 +46,7 @@ const getRooms = (): string[] =>
 	return roomIDs;
 }
 
-const leaveRoom = async (socket: Socket) =>
+const leaveRoom = (socket: Socket) =>
 {
 	let socketRooms = Array.from(socket.rooms.values());
 	let roomId = socketRooms.filter(r => r !== socket.id).shift()!;
@@ -85,14 +85,14 @@ const leaveRoom = async (socket: Socket) =>
 	io.emit('available-rooms', getRooms());
 }
 
-io.on('connection', async (socket) =>
+io.on('connection', (socket) =>
 {
 	info(`User '${socket.id}' connected`);
 
 	// notify newly connected user about available rooms
 	socket.emit('available-rooms', getRooms());
 
-	socket.on('join-room', async (roomId) =>
+	socket.on('join-room', (roomId) =>
 	{
 		debug(`User '${socket.id}' attempts to join room '${roomId}'`);
 		let room = io.of('/').adapter.rooms.get(roomId);
@@ -176,15 +176,15 @@ io.on('connection', async (socket) =>
 		}
 	});
 
-	socket.on('disconnecting', async () =>
+	socket.on('disconnecting', () =>
 	{
-		await leaveRoom(socket);
+		leaveRoom(socket);
 		info(`User '${socket.id}' disconnected`);
 	});
 
-	socket.on('leave', async () =>
+	socket.on('leave', () =>
 	{
-		await leaveRoom(socket);
+		leaveRoom(socket);
 	});
 
 	socket.on('restart', (callback) =>
