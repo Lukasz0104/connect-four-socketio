@@ -1,6 +1,7 @@
-const { isGameOver, EMPTY, RED, YELLOW } = require('../src/utils');
+import { isGameOver, EMPTY, RED, YELLOW } from '../src/utils';
 
-test('should find a sequence of 4 in a column', () => {
+test('should find a sequence of 4 in a column', () =>
+{
 	for (let r = 0; r < 6; r++)
 	{
 		for (let c = 0; c < 4; c++)
@@ -24,7 +25,8 @@ test('should find a sequence of 4 in a column', () => {
 	}
 });
 
-test('should find a sequence of 4 in a row', () => {
+test('should find a sequence of 4 in a row', () =>
+{
 	for (let c = 0; c < 6; c++)
 	{
 		for (let r = 0; r < 3; r++)
@@ -48,8 +50,9 @@ test('should find a sequence of 4 in a row', () => {
 	}
 });
 
-test('should find a sequence of 4 going diagonally up', () => {
-	
+test('should find a sequence of 4 going diagonally up', () =>
+{
+
 	for (let c = 0; c < 3; c++)
 	{
 		for (let r = 3; r < 6; r++)
@@ -63,7 +66,7 @@ test('should find a sequence of 4 going diagonally up', () => {
 				[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY],
 				[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY]
 			];
-			
+
 			for (let i = 0; i < 4; i++)
 			{
 				board[c + i][r - i] = RED;
@@ -74,8 +77,9 @@ test('should find a sequence of 4 going diagonally up', () => {
 	}
 });
 
-test('should find a sequence of 4 going diagonally down', () => {
-	
+test('should find a sequence of 4 going diagonally down', () =>
+{
+
 	for (let c = 0; c < 3; c++)
 	{
 		for (let r = 0; r < 3; r++)
@@ -89,7 +93,7 @@ test('should find a sequence of 4 going diagonally down', () => {
 				[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY],
 				[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY]
 			];
-			
+
 			for (let i = 0; i < 4; i++)
 			{
 				board[c + i][r + i] = RED;
@@ -99,4 +103,3 @@ test('should find a sequence of 4 going diagonally down', () => {
 		}
 	}
 });
-
