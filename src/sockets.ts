@@ -1,29 +1,19 @@
 import express from 'express';
-import http from 'http';
+import { createServer } from 'http';
 
 export const app = express();
-export const server = http.createServer(app);
+export const server = createServer(app);
 
 import { Server, Socket } from "socket.io";
 const io = new Server(server);
 
-import { isGameOver, EMPTY, RED, YELLOW, clone2DArray, isBoardFull, debug, info } from './utils';
-import RoomVariables from './RoomVariables';
+import { isGameOver, EMPTY, RED, YELLOW, isBoardFull, debug, info } from './utils';
+import Game from './Game';
 
 /**
- * Maps room's ID to object containing room variables, such as connected players and board.
+ * Maps room's ID to the game object.
  */
-let roomVariables: Map<string, RoomVariables> = new Map();
-
-const board: number[][] = [
-	[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY],
-	[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY],
-	[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY],
-	[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY],
-	[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY],
-	[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY],
-	[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY]
-];
+let Games: Map<string, Game> = new Map();
 
 const getRooms = (): string[] =>
 {
@@ -62,21 +52,21 @@ const leaveRoom = (socket: Socket) =>
 			// room still exists, so notify other player that opponent has left
 			socket.to(roomId).emit('opponent-left');
 
-			let rV = roomVariables.get(roomId)!;
+			let game = Games.get(roomId)!;
 
 			// check which player left
-			if (rV?.firstPlayerID === socket.id)
+			if (game?.firstPlayerID === socket.id)
 			{
 				// first player left, hence change color for the second player
-				rV.firstPlayerID = rV.secondPlayerID!;
-				rV.secondPlayerID = undefined;
-				debug(`Assigning RED color to player '${rV.firstPlayerID}'`);
+				game.firstPlayerID = game.secondPlayerID!;
+				game.secondPlayerID = undefined;
+				debug(`Assigning RED color to player '${game.firstPlayerID}'`);
 			}
 		}
 		else
 		{
 			// room was deleted, so remove entry from roomVariables
-			roomVariables.delete(roomId);
+			Games.delete(roomId);
 			info(`Deleting room '${roomId}'`);
 		}
 	}
@@ -107,17 +97,17 @@ io.on('connection', (socket) =>
 
 			if (!room) // first player
 			{
-				roomVariables.set(roomId, new RoomVariables(clone2DArray(board), socket.id));
+				Games.set(roomId, new Game(socket.id));
 			}
 			else if (room.size === 2)
 			{
-				let rV = roomVariables.get(roomId);
-				rV!.secondPlayerID = socket.id;
+				let game = Games.get(roomId);
+				game!.secondPlayerID = socket.id;
 
 				// check if board is even partially filled (meaning that user left mid-game)
-				if (rV!.board.some((row) => row.some(e => e !== EMPTY)))
+				if (game!.board.some((row) => row.some(e => e !== EMPTY)))
 				{
-					rV!.board = clone2DArray(board);
+					game!.clearBoard();
 				}
 
 				// emit to all clients in this room
@@ -141,34 +131,34 @@ io.on('connection', (socket) =>
 
 		let column = Number(c);
 
-		let rV: RoomVariables = roomVariables.get(roomId)!;
+		let game: Game = Games.get(roomId)!;
 
 		// find position to insert next piece
-		let index = rV.board[column].lastIndexOf(EMPTY);
+		let index = game.board[column].lastIndexOf(EMPTY);
 
 		if (index > -1)
 		{
 			// check which player did the move
-			if (rV.firstPlayerID === socket.id)
+			if (game.firstPlayerID === socket.id)
 			{
-				rV.board[column][index] = RED;
+				game.board[column][index] = RED;
 			}
 			else
 			{
-				rV.board[column][index] = YELLOW;
+				game.board[column][index] = YELLOW;
 			}
 
 			// send updated board to all players in the room
-			io.to(roomId).emit('update', rV.board);
+			io.to(roomId).emit('update', game.board);
 
 			// check if anyone did the winning move
-			if (isGameOver(rV.board))
+			if (isGameOver(game.board))
 			{
 				debug(`User '${socket.id}' won the game in room '${roomId}'`);
 				socket.emit('won');
 				socket.to(roomId).emit('lost');
 			}
-			else if (isBoardFull(rV.board))
+			else if (isBoardFull(game.board))
 			{
 				debug(`The game in room '${roomId}' is a draw`)
 				io.to(roomId).emit('draw');
@@ -195,10 +185,10 @@ io.on('connection', (socket) =>
 
 		info(`Player ${socket.id} wants to restart the game in room ${roomId}`);
 
-		let rV = roomVariables.get(roomId)!;
+		let game = Games.get(roomId)!;
 
 		// determine id of the other player in the room
-		let otherSocketID = rV.firstPlayerID == socket.id ? rV.secondPlayerID : rV.firstPlayerID;
+		let otherSocketID = game.firstPlayerID == socket.id ? game.secondPlayerID : game.firstPlayerID;
 
 		// ask the other player, whether they want to restart the game
 		io.timeout(3000).to(otherSocketID!).emit('prompt-new-game', (err: any, response: { answer: boolean; }[]) =>
@@ -218,14 +208,14 @@ io.on('connection', (socket) =>
 						info(`Player ${otherSocketID} agreed to restart the game in room ${roomId}`);
 
 						// clear the board
-						rV.board = clone2DArray(board);
+						game.clearBoard();
 
 						// swap players
-						[rV.firstPlayerID, rV.secondPlayerID] = [rV.secondPlayerID!, rV.firstPlayerID];
+						[game.firstPlayerID, game.secondPlayerID] = [game.secondPlayerID!, game.firstPlayerID];
 
 						info(`Restarting game in room ${roomId}`);
-						io.to(rV.firstPlayerID).emit('start-game', true);
-						io.to(rV.secondPlayerID).emit('start-game', false);
+						io.to(game.firstPlayerID).emit('start-game', true);
+						io.to(game.secondPlayerID).emit('start-game', false);
 					}
 				}
 				else 

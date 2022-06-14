@@ -15,11 +15,6 @@ export const info = (message: string) => console.info(formattedMessage(message, 
 
 export const debug = (message: string) => console.debug(formattedMessage(message, "DEBUG"));
 
-export function clone2DArray(arr: number[][]): number[][]
-{
-	return arr.map(a => a.slice());
-}
-
 export function isGameOver(board: number[][]): boolean
 {
 	// check rows
@@ -100,15 +95,4 @@ export function isGameOver(board: number[][]): boolean
 export function isBoardFull(board: number[][]): boolean
 {
 	return board.every(col => col.every(i => i != EMPTY));
-}
-
-export function clearBoard(board: number[][])
-{
-	for (let col of board)
-	{
-		for (let i = 0; i < col.length; i++)
-		{
-			col[i] = EMPTY;
-		}
-	}
 }
