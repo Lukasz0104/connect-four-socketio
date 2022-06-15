@@ -11,15 +11,22 @@
 
 	<body>
 		<div id="controls">
-			<div>	
-				<input placeholder="type room id" />
-				<button>join room</button>
+			<div>
+				<div>
+					<input type="checkbox" id="privateRoomCheckbox" />
+					<label>Private room</label>
+				</div>
+				<div>
+					<input placeholder="room id" type="text" />
+					<input id="passwordInput" type="password" placeholder="enter password" style="display: none;" />
+					<button id="joinRoomButton">join room</button>
+				</div>
 			</div>
 			<div>
 				<p>Available rooms:</p>
 				<ul id="rooms"></ul>
 			</div>
-			
+
 		</div>
 		<div id="game" class="hidden">
 			<div id="boardContainer"></div>

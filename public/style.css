@@ -2,6 +2,7 @@
 	--cell-size: 38px;
 	--cell-border: 1px;
 	--square-size: calc(var(--cell-size) + 2 * var(--cell-border));
+	font-size: large;
 }
 
 p {
@@ -61,10 +62,22 @@ div#controls > div {
 	display: inline-block;
 }
 
+div#controls > div:first-child > div {
+	vertical-align: top;
+}
+
+div#controls > div:first-child > div:last-child > input {
+	display: block;
+}
+
 li:hover {
 	color: lightskyblue;
 }
 
 li:hover::marker {
 	color: black;
+}
+
+div#controls > div:last-child {
+	vertical-align: top;
 }

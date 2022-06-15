@@ -3,6 +3,7 @@ const RED = 1;
 const YELLOW = 2;
 const container = document.querySelector('#boardContainer');
 const message = document.querySelector('p#message');
+const checkbox = document.querySelector('#privateRoomCheckbox');
 const availableRooms = document.querySelector('ul#rooms');
 const columns = [];
 
@@ -11,13 +12,17 @@ window.onload = () =>
 	let socket = io();
 	let canMove = false;
 	document.querySelector('button#new-game').addEventListener('click', newGame);
-	document.querySelector('div#controls > div > button')
-		.addEventListener('click', joinRoomViaInput);
+	document.querySelector('button#joinRoomButton').addEventListener('click', joinRoomViaInput);
 	document.querySelector('#disconnect').addEventListener('click', leaveRoom);
+
+	checkbox.addEventListener('change', () =>
+	{
+		document.querySelector('#passwordInput').style.display = checkbox.checked ? "block" : "none";
+	});
 
 	function joinRoomViaInput()
 	{
-		let roomID = document.querySelector('div#controls > div > input').value;
+		let roomID = document.querySelector('input[type=text]').value;
 		if (roomID)
 		{
 			socket.emit('join-room', roomID);
@@ -197,7 +202,7 @@ window.onload = () =>
 	socket.on('prompt-new-game', (callback) =>
 	{
 		callback({
-			answer: confirm('Opponent wants to start a new game. Do you agree?') 
+			answer: confirm('Opponent wants to start a new game. Do you agree?')
 		});
 	})
 }
