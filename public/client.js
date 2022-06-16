@@ -25,7 +25,15 @@ window.onload = () =>
 		let roomID = document.querySelector('input[type=text]').value;
 		if (roomID)
 		{
-			socket.emit('join-room', roomID);
+			if (!checkbox.checked)
+			{
+				socket.emit('join-room', roomID);
+			}
+			else
+			{
+				let pass = document.querySelector('#passwordInput').value;
+				socket.emit('join-room-with-passowrd', {id: roomID, password: pass});
+			}
 		}
 	}
 

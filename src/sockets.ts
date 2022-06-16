@@ -11,9 +11,11 @@ import { isGameOver, EMPTY, RED, YELLOW, isBoardFull, debug, info } from './util
 import Game from './Game';
 
 /**
- * Maps room's ID to the game object.
+ * Maps public room's ID to the game object.
  */
-let Games: Map<string, Game> = new Map();
+let publicGames: Map<string, Game> = new Map();
+
+let privateGames: Map<string, [Game, string]> = new Map();
 
 const getRooms = (): string[] =>
 {
@@ -27,7 +29,7 @@ const getRooms = (): string[] =>
 
 	for (let [id, room] of rooms.entries())
 	{
-		if (!clients.includes(id) && room.size < 2)
+		if (!clients.includes(id) && room.size < 2 && !privateGames.has(id))
 		{
 			roomIDs.push(id);
 		}
@@ -52,7 +54,15 @@ const leaveRoom = (socket: Socket) =>
 			// room still exists, so notify other player that opponent has left
 			socket.to(roomId).emit('opponent-left');
 
-			let game = Games.get(roomId)!;
+			let game: Game;
+			if (publicGames.has(roomId))
+			{
+				game = publicGames.get(roomId)!;
+			}
+			else
+			{
+				game = privateGames.get(roomId)![0];
+			}
 
 			// check which player left
 			if (game?.firstPlayerID === socket.id)
@@ -66,7 +76,7 @@ const leaveRoom = (socket: Socket) =>
 		else
 		{
 			// room was deleted, so remove entry from roomVariables
-			Games.delete(roomId);
+			publicGames.delete(roomId);
 			info(`Deleting room '${roomId}'`);
 		}
 	}
@@ -97,11 +107,11 @@ io.on('connection', (socket) =>
 
 			if (!room) // first player
 			{
-				Games.set(roomId, new Game(socket.id));
+				publicGames.set(roomId, new Game(socket.id));
 			}
 			else if (room.size === 2)
 			{
-				let game = Games.get(roomId);
+				let game = publicGames.get(roomId);
 				game!.secondPlayerID = socket.id;
 
 				// check if board is even partially filled (meaning that user left mid-game)
@@ -123,6 +133,51 @@ io.on('connection', (socket) =>
 		}
 	});
 
+	socket.on('join-room-with-passowrd', (obj) =>
+	{
+		let id: string = obj.id;
+		let password: string = obj.password;
+
+		let room = io.of('/').adapter.rooms.get(id);
+		if (!room || room.size < 2)
+		{
+			if (privateGames.has(id))
+			{
+				if (password === privateGames.get(id)![1])
+				{
+					socket.join(id);
+					socket.emit('room-joined');
+					debug(`User '${socket.id}' joined private room '${id}'`);
+					io.except(id).emit('available-rooms', getRooms());
+
+					let game = privateGames.get(id)!;
+					game[0].secondPlayerID = socket.id;
+					game[0].clearBoard();
+
+					socket.to(id).emit('start-game', true);
+					socket.emit('start-game', false);
+					info(`Starting new game in room '${id}'`);
+				}
+				else
+				{
+					// TODO emit wrong password
+				}
+			}
+			else
+			{
+				socket.join(id);
+				privateGames.set(id, [new Game(socket.id), password]);
+				socket.emit('room-joined');
+				debug(`User '${socket.id}' joined private room '${id}'`);
+			}
+		}
+		else
+		{
+			socket.emit('room-full');
+			debug(`User '${socket.id}' was unable to join room '${id}', because room was full`);
+		}
+	})
+
 	socket.on('move', c =>
 	{
 		const roomId = Array.from(socket.rooms.values())
@@ -131,7 +186,16 @@ io.on('connection', (socket) =>
 
 		let column = Number(c);
 
-		let game: Game = Games.get(roomId)!;
+		let game: Game;
+		if (publicGames.has(roomId))
+		{
+			game = publicGames.get(roomId)!;
+		}
+		else if (privateGames.has(roomId))
+		{
+			game = privateGames.get(roomId)![0];
+		}
+		else return;
 
 		// find position to insert next piece
 		let index = game.board[column].lastIndexOf(EMPTY);
@@ -185,7 +249,15 @@ io.on('connection', (socket) =>
 
 		info(`Player ${socket.id} wants to restart the game in room ${roomId}`);
 
-		let game = Games.get(roomId)!;
+		let game : Game;
+		if (publicGames.has(roomId))
+		{
+			game = publicGames.get(roomId)!;
+		}
+		else
+		{
+			game = privateGames.get(roomId)![0];
+		}
 
 		// determine id of the other player in the room
 		let otherSocketID = game.firstPlayerID == socket.id ? game.secondPlayerID : game.firstPlayerID;
