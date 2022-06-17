@@ -32,7 +32,7 @@ window.onload = () =>
 			else
 			{
 				let pass = document.querySelector('#passwordInput').value;
-				socket.emit('join-room-with-passowrd', {id: roomID, password: pass});
+				socket.emit('join-room-with-passowrd', { id: roomID, password: pass });
 			}
 		}
 	}
@@ -212,5 +212,10 @@ window.onload = () =>
 		callback({
 			answer: confirm('Opponent wants to start a new game. Do you agree?')
 		});
-	})
+	});
+
+	socket.on('invalid-password', () =>
+	{
+		alert("Incorrect password!");
+	});
 }

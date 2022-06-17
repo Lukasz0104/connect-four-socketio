@@ -54,30 +54,41 @@ const leaveRoom = (socket: Socket) =>
 			// room still exists, so notify other player that opponent has left
 			socket.to(roomId).emit('opponent-left');
 
-			let game: Game;
+			let game: Game = undefined!;
 			if (publicGames.has(roomId))
 			{
 				game = publicGames.get(roomId)!;
 			}
-			else
+			else if (privateGames.has(roomId))
 			{
 				game = privateGames.get(roomId)![0];
 			}
 
-			// check which player left
-			if (game?.firstPlayerID === socket.id)
+			if (game)
 			{
-				// first player left, hence change color for the second player
-				game.firstPlayerID = game.secondPlayerID!;
-				game.secondPlayerID = undefined;
-				debug(`Assigning RED color to player '${game.firstPlayerID}'`);
+				// check which player left
+				if (game?.firstPlayerID === socket.id)
+				{
+					// first player left, hence change color for the second player
+					game.firstPlayerID = game.secondPlayerID!;
+					game.secondPlayerID = undefined;
+					debug(`Assigning RED color to player '${game.firstPlayerID}'`);
+				}
 			}
 		}
 		else
 		{
 			// room was deleted, so remove entry from roomVariables
-			publicGames.delete(roomId);
-			info(`Deleting room '${roomId}'`);
+			if (publicGames.has(roomId))
+			{
+				publicGames.delete(roomId);
+				info(`Deleting public room '${roomId}'`);
+			}
+			else if (privateGames.has(roomId))
+			{
+				privateGames.delete(roomId);
+				info(`Deleting private room '${roomId}'`);
+			}
 		}
 	}
 
@@ -137,6 +148,7 @@ io.on('connection', (socket) =>
 	{
 		let id: string = obj.id;
 		let password: string = obj.password;
+		debug(`User '${socket.id}' attempts to join room '${id}'`);
 
 		let room = io.of('/').adapter.rooms.get(id);
 		if (!room || room.size < 2)
@@ -160,7 +172,8 @@ io.on('connection', (socket) =>
 				}
 				else
 				{
-					// TODO emit wrong password
+					socket.emit('invalid-password');
+					debug(`User '${socket.id} failed to join private room '${id}' (incorrect password)`);
 				}
 			}
 			else
@@ -249,7 +262,7 @@ io.on('connection', (socket) =>
 
 		info(`Player ${socket.id} wants to restart the game in room ${roomId}`);
 
-		let game : Game;
+		let game: Game;
 		if (publicGames.has(roomId))
 		{
 			game = publicGames.get(roomId)!;
