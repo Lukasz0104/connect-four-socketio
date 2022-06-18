@@ -136,6 +136,7 @@ window.onload = () =>
 	function leaveRoom()
 	{
 		socket.emit('leave');
+		document.querySelector("#roomID").innerText = '';
 		switchView();
 	}
 
@@ -190,9 +191,10 @@ window.onload = () =>
 		}
 	});
 
-	socket.on('room-joined', () =>
+	socket.on('room-joined', (roomID) =>
 	{
 		switchView();
+		document.querySelector("#roomID").innerText = `You are in connected to room ${roomID}`;
 	});
 
 	socket.on('opponent-left', () =>

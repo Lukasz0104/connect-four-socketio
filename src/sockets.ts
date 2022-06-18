@@ -110,7 +110,7 @@ io.on('connection', (socket) =>
 		if (!room || room.size < 2)
 		{
 			socket.join(roomId);
-			socket.emit('room-joined');
+			socket.emit('room-joined', roomId);
 			debug(`User '${socket.id}' joined room '${roomId}'`);
 
 			let notFullRooms = getRooms();
@@ -146,48 +146,48 @@ io.on('connection', (socket) =>
 
 	socket.on('join-room-with-passowrd', (obj) =>
 	{
-		let id: string = obj.id;
+		let roomID: string = obj.id;
 		let password: string = obj.password;
-		debug(`User '${socket.id}' attempts to join room '${id}'`);
+		debug(`User '${socket.id}' attempts to join room '${roomID}'`);
 
-		let room = io.of('/').adapter.rooms.get(id);
+		let room = io.of('/').adapter.rooms.get(roomID);
 		if (!room || room.size < 2)
 		{
-			if (privateGames.has(id))
+			if (privateGames.has(roomID))
 			{
-				if (password === privateGames.get(id)![1])
+				if (password === privateGames.get(roomID)![1])
 				{
-					socket.join(id);
-					socket.emit('room-joined');
-					debug(`User '${socket.id}' joined private room '${id}'`);
-					io.except(id).emit('available-rooms', getRooms());
+					socket.join(roomID);
+					socket.emit('room-joined', roomID);
+					debug(`User '${socket.id}' joined private room '${roomID}'`);
+					io.except(roomID).emit('available-rooms', getRooms());
 
-					let game = privateGames.get(id)!;
+					let game = privateGames.get(roomID)!;
 					game[0].secondPlayerID = socket.id;
 					game[0].clearBoard();
 
-					socket.to(id).emit('start-game', true);
+					socket.to(roomID).emit('start-game', true);
 					socket.emit('start-game', false);
-					info(`Starting new game in room '${id}'`);
+					info(`Starting new game in room '${roomID}'`);
 				}
 				else
 				{
 					socket.emit('invalid-password');
-					debug(`User '${socket.id} failed to join private room '${id}' (incorrect password)`);
+					debug(`User '${socket.id} failed to join private room '${roomID}' (incorrect password)`);
 				}
 			}
 			else
 			{
-				socket.join(id);
-				privateGames.set(id, [new Game(socket.id), password]);
+				socket.join(roomID);
+				privateGames.set(roomID, [new Game(socket.id), password]);
 				socket.emit('room-joined');
-				debug(`User '${socket.id}' joined private room '${id}'`);
+				debug(`User '${socket.id}' joined private room '${roomID}'`);
 			}
 		}
 		else
 		{
 			socket.emit('room-full');
-			debug(`User '${socket.id}' was unable to join room '${id}', because room was full`);
+			debug(`User '${socket.id}' was unable to join room '${roomID}', because room was full`);
 		}
 	})
 
