@@ -7,7 +7,7 @@ export const server = createServer(app);
 import { Server, Socket } from "socket.io";
 const io = new Server(server);
 
-import { isGameOver, EMPTY, RED, YELLOW, isBoardFull, debug, info } from './utils';
+import { EMPTY, RED, YELLOW, debug, info } from './utils';
 import Game from './Game';
 
 /**
@@ -229,13 +229,13 @@ io.on('connection', (socket) =>
 			io.to(roomId).emit('update', game.board);
 
 			// check if anyone did the winning move
-			if (isGameOver(game.board))
+			if (game.isGameOver())
 			{
 				debug(`User '${socket.id}' won the game in room '${roomId}'`);
 				socket.emit('won');
 				socket.to(roomId).emit('lost');
 			}
-			else if (isBoardFull(game.board))
+			else if (game.isBoardFull())
 			{
 				debug(`The game in room '${roomId}' is a draw`)
 				io.to(roomId).emit('draw');
