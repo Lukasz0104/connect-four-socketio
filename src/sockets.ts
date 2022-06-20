@@ -7,8 +7,8 @@ export const server = createServer(app);
 import { Server, Socket } from "socket.io";
 const io = new Server(server);
 
-import { EMPTY, RED, YELLOW, debug, info } from './utils';
 import Game from './Game';
+import { debug, EMPTY, info, RED, YELLOW } from './utils';
 
 /**
  * Maps public room's ID to the game object.
@@ -122,13 +122,14 @@ io.on('connection', (socket) =>
 			}
 			else if (room.size === 2)
 			{
-				let game = publicGames.get(roomId);
-				game!.secondPlayerID = socket.id;
+				let game = publicGames.get(roomId)!;
+				game.secondPlayerID = socket.id;
 
 				// check if board is even partially filled (meaning that user left mid-game)
-				if (game!.board.some((row) => row.some(e => e !== EMPTY)))
+				if (game.board.some((row) => row.some(e => e !== EMPTY)))
 				{
-					game!.clearBoard();
+					game.clearBoard();
+					game.canMove = true;
 				}
 
 				// emit to all clients in this room
@@ -210,35 +211,40 @@ io.on('connection', (socket) =>
 		}
 		else return;
 
-		// find position to insert next piece
-		let index = game.board[column].lastIndexOf(EMPTY);
-
-		if (index > -1)
+		if (game.canMove)
 		{
-			// check which player did the move
-			if (game.firstPlayerID === socket.id)
-			{
-				game.board[column][index] = RED;
-			}
-			else
-			{
-				game.board[column][index] = YELLOW;
-			}
+			// find position to insert next piece
+			let index = game.board[column].lastIndexOf(EMPTY);
 
-			// send updated board to all players in the room
-			io.to(roomId).emit('update', game.board);
+			if (index > -1)
+			{
+				// check which player did the move
+				if (game.firstPlayerID === socket.id)
+				{
+					game.board[column][index] = RED;
+				}
+				else
+				{
+					game.board[column][index] = YELLOW;
+				}
 
-			// check if anyone did the winning move
-			if (game.isGameOver())
-			{
-				debug(`User '${socket.id}' won the game in room '${roomId}'`);
-				socket.emit('won');
-				socket.to(roomId).emit('lost');
-			}
-			else if (game.isBoardFull())
-			{
-				debug(`The game in room '${roomId}' is a draw`)
-				io.to(roomId).emit('draw');
+				// send updated board to all players in the room
+				io.to(roomId).emit('update', game.board);
+
+				// check if anyone did the winning move
+				if (game.isGameOver())
+				{
+					debug(`User '${socket.id}' won the game in room '${roomId}'`);
+					socket.emit('won');
+					socket.to(roomId).emit('lost');
+					game.canMove = false;
+				}
+				else if (game.isBoardFull())
+				{
+					debug(`The game in room '${roomId}' is a draw`)
+					io.to(roomId).emit('draw');
+					game.canMove = false;
+				}
 			}
 		}
 	});
@@ -260,7 +266,7 @@ io.on('connection', (socket) =>
 			.filter(r => r !== socket.id)
 			.shift()!;
 
-		info(`Player ${socket.id} wants to restart the game in room ${roomId}`);
+		info(`Player '${socket.id}' wants to restart the game in room '${roomId}'`);
 
 		let game: Game;
 		if (publicGames.has(roomId))
@@ -306,7 +312,7 @@ io.on('connection', (socket) =>
 				else 
 				{
 					callback({ response: false });
-					info(`Player ${socket.id} did not want to restart the game in room ${roomId}`);
+					info(`Player '${socket.id}' did not want to restart the game in room '${roomId}'`);
 				}
 			}
 		});

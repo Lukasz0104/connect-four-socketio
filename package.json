@@ -5,6 +5,7 @@
 	"main": "./dist/server.js",
 	"scripts": {
 		"test": "jest",
+		"predevServer": "tsc",
 		"devServer": "concurrently \"npx tsc --watch\" \"nodemon -w dist -w public -w index.html\"",
 		"build": "tsc",
 		"start": "node dist/server.js"

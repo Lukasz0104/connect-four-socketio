@@ -12,6 +12,8 @@ export default class Game
 	 */
 	secondPlayerID?: string;
 
+	canMove: boolean = true;
+
 	board: Array<Array<number>> = [
 		[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY],
 		[EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY],

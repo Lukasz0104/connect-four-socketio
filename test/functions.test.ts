@@ -1,5 +1,5 @@
-import { EMPTY, RED, YELLOW } from '../src/utils';
 import Game from '../src/Game';
+import { RED, YELLOW } from '../src/utils';
 
 let game = new Game('');
 test('should find a sequence of 4 in a column', () =>
