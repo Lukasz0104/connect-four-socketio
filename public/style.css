@@ -52,6 +52,9 @@ p {
 
 #yourColor+div {
 	display: inline-block;
+	width: 1em;
+	height: 1em;
+	vertical-align: middle;
 }
 
 .hidden {
@@ -78,6 +81,23 @@ li:hover::marker {
 	color: black;
 }
 
-div#controls > div:last-child {
-	vertical-align: top;
+@media screen and (max-height: 650px) {
+	#boardContainer,
+	#boardContainer + div {
+		display: inline-block;
+		vertical-align: middle;
+		margin-bottom: 0;
+	}
+
+	body {
+		margin: auto;
+		width: fit-content;
+	}
+}
+
+@media screen and (min-height: 421px) and (min-width: 800px) {
+	:root {
+		--cell-size: 67px;
+		--cell-border: 1.5px;
+	}
 }

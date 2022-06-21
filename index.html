@@ -26,18 +26,19 @@
 				<p>Available public rooms:</p>
 				<ul id="rooms"></ul>
 			</div>
-
 		</div>
 		<div id="game" class="hidden">
-			<p id="roomID"></p>
 			<div id="boardContainer"></div>
 			<div>
-				<span id="yourColor">Your color: </span>
-				<div class="cell"></div>
+				<p id="roomID"></p>
+				<div>
+					<span id="yourColor">Your color: </span>
+					<div></div>
+				</div>
+				<p id="message"></p>
+				<button id="new-game">new game</button>
+				<button id="disconnect">disconnect from room</button>
 			</div>
-			<p id="message"></p>
-			<button id="new-game">new game</button>
-			<button id="disconnect">disconnect from room</button>
 		</div>
 		<script src="/socket.io/socket.io.js"></script>
 		<script src='/client.js'></script>
